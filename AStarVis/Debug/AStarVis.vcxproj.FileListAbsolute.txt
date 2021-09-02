@@ -1,0 +1,2 @@
+D:\GitHub\AStarVisualization\AStarVis\Debug\AStarVis.exe
+D:\GitHub\AStarVisualization\AStarVis\Debug\AStarVis.pdb
