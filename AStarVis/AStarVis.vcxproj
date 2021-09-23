@@ -155,8 +155,12 @@
     <ClCompile Include="stb.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <Image Include="Maps\AryanMaze.png" />
+    <Image Include="Maps\AryanMaze2.png" />
+    <Image Include="Maps\AryanMaze3.png" />
     <Image Include="Maps\smallTest.png" />
     <Image Include="Maps\testMap.png" />
+    <Image Include="Maps\TestMap128.png" />
     <Image Include="Maps\testMap16.png" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

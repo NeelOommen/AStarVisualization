@@ -38,5 +38,17 @@
     <Image Include="Maps\testMap16.png">
       <Filter>Resource Files\Maps</Filter>
     </Image>
+    <Image Include="Maps\AryanMaze.png">
+      <Filter>Resource Files\Maps</Filter>
+    </Image>
+    <Image Include="Maps\AryanMaze2.png">
+      <Filter>Resource Files\Maps</Filter>
+    </Image>
+    <Image Include="Maps\AryanMaze3.png">
+      <Filter>Resource Files\Maps</Filter>
+    </Image>
+    <Image Include="Maps\TestMap128.png">
+      <Filter>Resource Files\Maps</Filter>
+    </Image>
   </ItemGroup>
 </Project>

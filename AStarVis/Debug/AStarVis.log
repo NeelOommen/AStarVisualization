@@ -1,2 +1,3 @@
 ﻿  Source.cpp
+D:\GitHub\AStarVisualization\AStarVis\Source.cpp(125,19): warning C4018: '<': signed/unsigned mismatch
   AStarVis.vcxproj -> D:\GitHub\AStarVisualization\AStarVis\Debug\AStarVis.exe
