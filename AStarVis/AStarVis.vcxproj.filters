@@ -19,6 +19,9 @@
     <Filter Include="Resource Files\Maps">
       <UniqueIdentifier>{73761fdd-ee17-4b85-bf2f-3aa463ed410a}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Libraries">
+      <UniqueIdentifier>{881a84c0-675c-40c8-93c1-987b783607ce}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stb.cpp">
@@ -57,6 +60,15 @@
       <Filter>Resource Files\Maps</Filter>
     </Image>
     <Image Include="Maps\maze7.png">
+      <Filter>Resource Files\Maps</Filter>
+    </Image>
+    <Image Include="Maps\testMap512.png">
+      <Filter>Resource Files\Maps</Filter>
+    </Image>
+    <Image Include="Maps\finalMaze.png">
+      <Filter>Resource Files\Maps</Filter>
+    </Image>
+    <Image Include="Maps\final2.png">
       <Filter>Resource Files\Maps</Filter>
     </Image>
   </ItemGroup>

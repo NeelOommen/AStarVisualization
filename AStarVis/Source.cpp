@@ -3,8 +3,13 @@
 #include <iterator>
 #include <chrono>
 #include <stb/stb_image.h>
+#include <SDL.h>
+#include <conio.h>
 
 using namespace std;
+
+const int WIDTH = 800;
+const int HEIGHT = 800;
 
 enum class cellType {
 	start = 0,
@@ -16,15 +21,17 @@ enum class cellType {
 	considered = 4
 };
 
-class cell {
+
+class cell{
 private:
 	int x, y;
 	cellType type;
-	int parentI;;
+	int parentI;
 	int parentJ;
 public:
 	double g, h, f;
-	void setData(int r, int g, int b, int xCoord, int yCoord, int &sources, int &targets) {
+	
+	void setData(int r, int g, int b, int xCoord, int yCoord, int& sources, int& targets) {
 		x = xCoord;
 		y = yCoord;
 		if (r == 255 && g == 255 && b == 255) {
@@ -34,7 +41,7 @@ public:
 			type = cellType::start;
 			sources++;
 		}
-		else if ( r != 255 && g == 255 && b != 255) {
+		else if (r != 255 && g == 255 && b != 255) {
 			type = cellType::target;
 			targets++;
 		}
@@ -69,7 +76,15 @@ public:
 		parentI = -1;
 		parentJ = -1;
 	}
+
+	void getParents(int &inI, int &inJ) {
+		inI = parentI;
+		inJ = parentJ;
+	}
+
 };
+
+
 
 double hValue(int i,int j,int desti,int destj) {
 	return((double)sqrt(((i-desti)*(i-desti))-((j-destj)*(j-destj))));
@@ -83,7 +98,7 @@ void cleanup(unsigned char* img, cell* cellData) {
 bool isValid(int i, int j, int w, int h, cell* mat) {
 	bool flag = false;
 	if (i >= 0 && i < h) {
-		if (j >= 0 && j < w && ((mat + (i*w + j))->retType()==cellType::walkable || (mat + (i * w + j))->retType() == cellType::considered || (mat + (i * w + j))->retType() == cellType::target)) {
+		if (j >= 0 && j < w && ((mat + (i*w + j))->retType()==cellType::walkable || (mat + (i * w + j))->retType() == cellType::considered || (mat + (i * w + j))->retType() == cellType::target) && !((mat + (i * w + j))->retType() == cellType::visited)) {
 			flag = true;
 		}
 	}
@@ -131,7 +146,35 @@ void findNextCell(vector<pair<int,int>> v,cell* mat, int w, int h, int& nI, int&
 	nJ = mJ;
 }
 
-void aStarSearch(cell* mat, int sI, int sJ, int eI, int eJ, int w, int h) {
+void backgroundGrid(SDL_Window* window, SDL_Renderer* renderer, int w, int h, cell* mat) {
+	SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+	SDL_RenderClear(renderer);
+	int stepSize = WIDTH / w;
+	SDL_Rect r;
+	r.w = stepSize - 1;
+	r.h = stepSize - 1;
+	SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
+	for (int i = 0; i < h; i++) {
+		r.y = i * stepSize;
+		for (int j = 0; j < w; j++) {
+			r.x = j * stepSize;
+			if ((mat + (i * w + j))->retType() == cellType::wall) {
+				SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+			}
+			else
+			if ((mat + (i * w + j))->retType() == cellType::target) {
+				SDL_SetRenderDrawColor(renderer, 0, 0, 255,255);
+			}
+			else {
+				SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
+			}
+			SDL_RenderFillRect(renderer, &r);
+		}
+	}
+	SDL_RenderPresent(renderer);
+}
+
+void aStarSearch(cell* mat, int sI, int sJ, int eI, int eJ, int w, int h, SDL_Window* window, SDL_Renderer* renderer) {
 
 	//Setting initial conditions for the first cell to be chosen
 	(mat + (sI * w + sJ))->setFGH(0.0, 0.0, 0.0);
@@ -144,8 +187,15 @@ void aStarSearch(cell* mat, int sI, int sJ, int eI, int eJ, int w, int h) {
 	cI = sI;
 	cJ = sJ;
 
+	int stepSize = WIDTH / w;
+	SDL_Rect r;
+	r.w = stepSize - 1;
+	r.h = stepSize - 1;
+
 	vector<pair<int, int>> consideredPoints;
 	consideredPoints.push_back(make_pair(sI,sJ));
+
+	SDL_Event windowEvent;
 
 	//continue here
 	//iterate till goal found, or all cells visited
@@ -155,6 +205,12 @@ void aStarSearch(cell* mat, int sI, int sJ, int eI, int eJ, int w, int h) {
 		(mat + (cI * w + cJ))->setFGH(FLT_MAX, FLT_MAX, FLT_MAX);
 		remove(consideredPoints.begin(), consideredPoints.end(), make_pair(cI, cJ));
 		numVisited++;
+		//draw visited cell
+		SDL_SetRenderDrawColor(renderer,255,0,0,255);
+		r.y = cI * stepSize;
+		r.x = cJ * stepSize;
+		SDL_RenderFillRect(renderer, &r);
+
 
 		//check if this is the goal
 		if (cI == eI && cJ == eJ) {
@@ -164,6 +220,7 @@ void aStarSearch(cell* mat, int sI, int sJ, int eI, int eJ, int w, int h) {
 		}
 
 		//update all the valid neighbours
+		SDL_SetRenderDrawColor(renderer, 0, 128, 0, 255);
 		//1st neighbour (up) i-1,j
 		if (isValid(cI - 1, cJ, w, h, mat)) {
 			//new f,g,h costs
@@ -180,6 +237,10 @@ void aStarSearch(cell* mat, int sI, int sJ, int eI, int eJ, int w, int h) {
 				if (!(find(consideredPoints.begin(), consideredPoints.end(), make_pair(cI - 1, cJ)) != consideredPoints.end())) {
 					consideredPoints.push_back(make_pair(cI-1,cJ));
 				}
+				//mark considered rectangle
+				r.y = (cI - 1) * stepSize;
+				r.x = (cJ) * stepSize;
+				SDL_RenderFillRect(renderer, &r);
 			}
 		}
 
@@ -199,6 +260,10 @@ void aStarSearch(cell* mat, int sI, int sJ, int eI, int eJ, int w, int h) {
 				if (!(find(consideredPoints.begin(), consideredPoints.end(), make_pair(cI - 1, cJ + 1)) != consideredPoints.end())) {
 					consideredPoints.push_back(make_pair(cI - 1, cJ + 1));
 				}
+				//mark considered rectangle
+				r.y = (cI - 1) * stepSize;
+				r.x = (cJ + 1) * stepSize;
+				SDL_RenderFillRect(renderer, &r);
 			}
 		}
 
@@ -218,6 +283,10 @@ void aStarSearch(cell* mat, int sI, int sJ, int eI, int eJ, int w, int h) {
 				if (!(find(consideredPoints.begin(), consideredPoints.end(), make_pair(cI, cJ + 1)) != consideredPoints.end())) {
 					consideredPoints.push_back(make_pair(cI, cJ + 1));
 				}
+				//mark considered rectangle
+				r.y = (cI) * stepSize;
+				r.x = (cJ + 1) * stepSize;
+				SDL_RenderFillRect(renderer, &r);
 			}
 		}
 
@@ -237,6 +306,10 @@ void aStarSearch(cell* mat, int sI, int sJ, int eI, int eJ, int w, int h) {
 				if (!(find(consideredPoints.begin(), consideredPoints.end(), make_pair(cI + 1, cJ + 1)) != consideredPoints.end())) {
 					consideredPoints.push_back(make_pair(cI + 1, cJ + 1));
 				}
+				//mark considered rectangle
+				r.y = (cI + 1) * stepSize;
+				r.x = (cJ + 1) * stepSize;
+				SDL_RenderFillRect(renderer, &r);
 			}
 		}
 
@@ -256,6 +329,10 @@ void aStarSearch(cell* mat, int sI, int sJ, int eI, int eJ, int w, int h) {
 				if (!(find(consideredPoints.begin(), consideredPoints.end(), make_pair(cI + 1, cJ)) != consideredPoints.end())) {
 					consideredPoints.push_back(make_pair(cI + 1, cJ));
 				}
+				//mark considered rectangle
+				r.y = (cI + 1) * stepSize;
+				r.x = (cJ) * stepSize;
+				SDL_RenderFillRect(renderer, &r);
 			}
 		}
 
@@ -275,6 +352,10 @@ void aStarSearch(cell* mat, int sI, int sJ, int eI, int eJ, int w, int h) {
 				if (!(find(consideredPoints.begin(), consideredPoints.end(), make_pair(cI + 1, cJ - 1)) != consideredPoints.end())) {
 					consideredPoints.push_back(make_pair(cI + 1, cJ - 1));
 				}
+				//mark considered rectangle
+				r.y = (cI + 1) * stepSize;
+				r.x = (cJ - 1) * stepSize;
+				SDL_RenderFillRect(renderer, &r);
 			}
 		}
 
@@ -294,6 +375,10 @@ void aStarSearch(cell* mat, int sI, int sJ, int eI, int eJ, int w, int h) {
 				if (!(find(consideredPoints.begin(), consideredPoints.end(), make_pair(cI, cJ - 1)) != consideredPoints.end())) {
 					consideredPoints.push_back(make_pair(cI, cJ - 1));
 				}
+				//mark considered rectangle
+				r.y = (cI) * stepSize;
+				r.x = (cJ - 1) * stepSize;
+				SDL_RenderFillRect(renderer, &r);
 			}
 		}
 
@@ -313,8 +398,13 @@ void aStarSearch(cell* mat, int sI, int sJ, int eI, int eJ, int w, int h) {
 				if (!(find(consideredPoints.begin(), consideredPoints.end(), make_pair(cI - 1, cJ - 1)) != consideredPoints.end())) {
 					consideredPoints.push_back(make_pair(cI - 1, cJ - 1));
 				}
+				//mark considered rectangle
+				r.y = (cI - 1) * stepSize;
+				r.x = (cJ - 1) * stepSize;
+				SDL_RenderFillRect(renderer, &r);
 			}
 		}
+		SDL_RenderPresent(renderer);
 
 		//pick the next node to visit
 		//the node visited next will be the one with the least f cost
@@ -325,13 +415,57 @@ void aStarSearch(cell* mat, int sI, int sJ, int eI, int eJ, int w, int h) {
 		//change to the chosen cell
 		cI = nI;
 		cJ = nJ;
+		/*if (SDL_PollEvent(&windowEvent)) {
+			if (windowEvent.type == SDL_QUIT) {
+				break;
+			}
+		}
+
+		//background
+		SDL_SetRenderDrawColor(renderer, 0,0,0,255);
+
+		SDL_RenderClear(renderer);
+
+		SDL_Rect r;
+		r.x = 50;
+		r.y = 50;
+		r.w = 250;
+		r.h = 250;
+
+		SDL_SetRenderDrawColor(renderer, 0, 0, 255,255);
+		SDL_RenderFillRect(renderer, &r);
+		SDL_RenderPresent(renderer);*/
+
+		//backgroundGrid(window, renderer, w, h,mat);
 	}
 }
 
-int main() {
+
+
+int main(int argc, char* args[]) {
+	//initialize SDL
+	if (SDL_Init(SDL_INIT_EVERYTHING) < 0) {
+		//SDL failed to initialize
+		cout << "\nSDL Initialization Error: " << SDL_GetError() << endl;
+		return 0;
+	}
+
+	//Create the SDL window
+	SDL_Window* window = SDL_CreateWindow("Pathfinder", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, WIDTH, HEIGHT, SDL_WINDOW_ALLOW_HIGHDPI);
+
+	//Verify window creation
+	if (window == NULL) {
+		cout << "\nWindow creation has failed: "<<SDL_GetError()<<endl;
+		return 0;
+	}
+
+	//sdl renderer
+	SDL_Renderer* renderer = NULL;
+	renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
+
 	auto beginTime = std::chrono::high_resolution_clock::now();
 	int width, height, numChannels;
-	unsigned char* imgData = stbi_load("Maps/maze7.png", &width, &height, &numChannels, 0);
+	unsigned char* imgData = stbi_load("Maps/final2.png", &width, &height, &numChannels, 0);
 
 	cout << "Size of the image: " << width << "x" << height<<endl;
 
@@ -366,12 +500,14 @@ int main() {
 		cleanup(imgData,mat);
 		exit(0);
 	}
+	
+	backgroundGrid(window, renderer, width, height, mat);
 
 	//actual search
-	aStarSearch(mat, startI,startJ, endI, endJ,width,height);
+	aStarSearch(mat, startI,startJ, endI, endJ,width,height,window,renderer);
 
 	//debug for the map
-	cout << "\n";
+	/*cout << "\n";
 	for (int i = 0; i < width; i++) {
 		for (int j = 0; j < height; j++) {
 			int c = (int)(mat + (i * width + j))->retType();
@@ -387,12 +523,38 @@ int main() {
 			}
 		}
 		cout << endl;
+	}*/
+
+	//back track actual found path
+	int bI, bJ;
+	bI = endI;
+	bJ = endJ;
+	int stepSize = WIDTH/width;
+	SDL_Rect bR;
+	bR.w = stepSize - 1;
+	bR.h = stepSize - 1;
+	SDL_SetRenderDrawColor(renderer,255,255,0,255);
+	for (int i=0; width*height;i++) {
+		int l, k;
+		l = bI;
+		k = bJ;
+		bR.y = bI * stepSize;
+		bR.x= bJ * stepSize;
+		SDL_RenderFillRect(renderer, &bR);
+		SDL_RenderPresent(renderer);
+		(mat + (bI * width + bJ))->getParents(bI,bJ);
+		if (bI == l && bJ == k) {
+			break;
+		}
 	}
 
 	auto endTime = std::chrono::high_resolution_clock::now();
 	auto elapsed = std::chrono::duration_cast<std::chrono::nanoseconds>(endTime - beginTime);
 	cout << "\nTotal execution time: " << elapsed.count() * 1e-9;
+	_getch();
 	//cleanup of data and stb 
 	cleanup(imgData,mat);
+	SDL_DestroyWindow(window);
+	SDL_Quit();
 	return 0;
 }
