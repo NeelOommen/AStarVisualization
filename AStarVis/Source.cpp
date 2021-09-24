@@ -90,55 +90,52 @@ bool isValid(int i, int j, int w, int h, cell* mat) {
 	return flag;
 }
 
-void findNextCell(cell* mat, int width, int height, int &nI, int &nJ) {
+void findNextCell(vector<pair<int,int>> v,cell* mat, int w, int h, int& nI, int& nJ) {
 	//first find min f cost
-	double mF;
-	mF = (mat + (0 * width + 0))->f;
-	for (int i = 0; i < width; i++) {
-		for (int j = 0; j < height; j++) {
-			if ((mat + (i * width + j))->f < mF && (mat + (i * width + j))->retType() == cellType::considered) {
-				mF = (mat + (i * width + j))->f;
-				cout << "\nAdded " << i << " " << j;
-			}
+	double mF = FLT_MAX;
+	for (int i = 0; i < v.size();i++) {
+		if ((mat + (v[i].first * w + v[i].second))->f <mF) {
+			mF = (mat + (v[i].first * w + v[i].second))->f;
 		}
 	}
 
-	//find all instances of cells with f costs equal to the minimum f values
-	vector<pair<int,int>> minPoints;
-	for (int i = 0; i < height; i++) {
-		for (int j = 0; j < width; j++) {
-			if ((mat + (i * width + j))->f == mF) {
-				minPoints.push_back(make_pair(i,j));
-				nI = i;
-				nJ = j;
-			}
+	//points with f equal to minimum
+	vector<pair<int, int>> minPoints;
+	for (int i = 0; i < v.size(); i++) {
+		if ((mat + (v[i].first * w + v[i].second))->f == mF) {
+			minPoints.push_back(make_pair(v[i].first, v[i].second));
 		}
 	}
-	//set nI and nJ
 
-	//find the cell with the lowest h cost
-	double minH;
+	//min h cost
 	int mI, mJ;
-	minH = (mat + (minPoints[0].first*width + minPoints[0].second))->h;
-	mI = minPoints[0].first;
-	mJ = minPoints[0].second;
-	for (int k = 0; k<minPoints.size(); k++) {
-		if ((mat + (minPoints[k].first * width + minPoints[k].second))->h < minH) {
-			minH = (mat + (minPoints[k].first * width + minPoints[k].second))->h;
-			mI = minPoints[k].first;
-			mJ = minPoints[k].second;
+	mI = -1;
+	mJ = -1;
+	if (minPoints.size() == 1) {
+		mI = minPoints[0].first;
+		mJ = minPoints[0].second;
+	}
+	else {
+		double minH = FLT_MAX;
+		for (int i = 0; i < minPoints.size(); i++) {
+			if ((mat + (minPoints[i].first * w + minPoints[i].second))->h < minH) {
+				minH = (mat + (minPoints[i].first * w + minPoints[i].second))->h;
+				mI = minPoints[i].first;
+				mJ = minPoints[i].second;
+			}
 		}
 	}
+
+	//set values 
 	nI = mI;
 	nJ = mJ;
-	minPoints.clear();
 }
 
-void aStarSearch(cell* mat, int sI, int sJ, int eI, int eJ,int w, int h) {
+void aStarSearch(cell* mat, int sI, int sJ, int eI, int eJ, int w, int h) {
 
 	//Setting initial conditions for the first cell to be chosen
-	(mat + (sI * w + sJ))->setFGH(0.0,0.0,0.0);
-	(mat + (sI * w + sJ))->setParent(sI,sJ);
+	(mat + (sI * w + sJ))->setFGH(0.0, 0.0, 0.0);
+	(mat + (sI * w + sJ))->setParent(sI, sJ);
 
 	bool foundGoal = false;
 	int numVisited = 0;
@@ -147,12 +144,16 @@ void aStarSearch(cell* mat, int sI, int sJ, int eI, int eJ,int w, int h) {
 	cI = sI;
 	cJ = sJ;
 
+	vector<pair<int, int>> consideredPoints;
+	consideredPoints.push_back(make_pair(sI,sJ));
+
 	//continue here
 	//iterate till goal found, or all cells visited
-	for (;!foundGoal && numVisited< (w*h);) {
+	for (; !foundGoal && numVisited < (w * h);) {
 		//set the current cell as visited/closed
 		(mat + (cI * w + cJ))->setType(cellType::visited);
-		(mat + (cI*w+cJ))->setFGH(FLT_MAX,FLT_MAX,FLT_MAX);
+		(mat + (cI * w + cJ))->setFGH(FLT_MAX, FLT_MAX, FLT_MAX);
+		remove(consideredPoints.begin(), consideredPoints.end(), make_pair(cI, cJ));
 		numVisited++;
 
 		//check if this is the goal
@@ -168,14 +169,17 @@ void aStarSearch(cell* mat, int sI, int sJ, int eI, int eJ,int w, int h) {
 			//new f,g,h costs
 			double fN, hN, gN;
 			gN = (mat + (cI * w + cJ))->g + 1.0;
-			hN = (cI-1,cJ,eI,eJ);
+			hN = (cI - 1, cJ, eI, eJ);
 			fN = gN + hN;
 			//check if cell is uninitialized or new path is more efficient than the old one
-			if ((mat + ((cI-1) * w + cJ))->f == FLT_MAX || (mat + ((cI-1) * w + cJ))->f > fN) {
+			if ((mat + ((cI - 1) * w + cJ))->f == FLT_MAX || (mat + ((cI - 1) * w + cJ))->f > fN) {
 				//update the cells data
-				(mat + ((cI - 1) * w + cJ))->setFGH(fN,gN,hN);
-				(mat + ((cI - 1) * w + cJ))->setParent(cI,cJ);
+				(mat + ((cI - 1) * w + cJ))->setFGH(fN, gN, hN);
+				(mat + ((cI - 1) * w + cJ))->setParent(cI, cJ);
 				(mat + ((cI - 1) * w + cJ))->setType(cellType::considered);
+				if (!(find(consideredPoints.begin(), consideredPoints.end(), make_pair(cI - 1, cJ)) != consideredPoints.end())) {
+					consideredPoints.push_back(make_pair(cI-1,cJ));
+				}
 			}
 		}
 
@@ -184,14 +188,17 @@ void aStarSearch(cell* mat, int sI, int sJ, int eI, int eJ,int w, int h) {
 			//new f,g,h costs
 			double fN, hN, gN;
 			gN = (mat + (cI * w + cJ))->g + 1.414;
-			hN = (cI - 1, cJ+1, eI, eJ);
+			hN = (cI - 1, cJ + 1, eI, eJ);
 			fN = gN + hN;
 			//check if cell is uninitialized or new path is more efficient than the old one
-			if ((mat + ((cI - 1) * w + (cJ+1)))->f == FLT_MAX || (mat + ((cI - 1) * w + (cJ+1)))->f > fN) {
+			if ((mat + ((cI - 1) * w + (cJ + 1)))->f == FLT_MAX || (mat + ((cI - 1) * w + (cJ + 1)))->f > fN) {
 				//update the cells data
 				(mat + ((cI - 1) * w + (cJ + 1)))->setFGH(fN, gN, hN);
 				(mat + ((cI - 1) * w + (cJ + 1)))->setParent(cI, cJ);
 				(mat + ((cI - 1) * w + (cJ + 1)))->setType(cellType::considered);
+				if (!(find(consideredPoints.begin(), consideredPoints.end(), make_pair(cI - 1, cJ + 1)) != consideredPoints.end())) {
+					consideredPoints.push_back(make_pair(cI - 1, cJ + 1));
+				}
 			}
 		}
 
@@ -200,14 +207,17 @@ void aStarSearch(cell* mat, int sI, int sJ, int eI, int eJ,int w, int h) {
 			//new f,g,h costs
 			double fN, hN, gN;
 			gN = (mat + (cI * w + cJ))->g + 1.0;
-			hN = (cI , cJ + 1, eI, eJ);
+			hN = (cI, cJ + 1, eI, eJ);
 			fN = gN + hN;
 			//check if cell is uninitialized or new path is more efficient than the old one
-			if ((mat + ((cI) * w + (cJ + 1)))->f == FLT_MAX || (mat + ((cI) * w + (cJ + 1)))->f > fN) {
+			if ((mat + ((cI)*w + (cJ + 1)))->f == FLT_MAX || (mat + ((cI)*w + (cJ + 1)))->f > fN) {
 				//update the cells data
-				(mat + ((cI) * w + (cJ + 1)))->setFGH(fN, gN, hN);
-				(mat + ((cI) * w + (cJ + 1)))->setParent(cI, cJ);
-				(mat + ((cI) * w + (cJ + 1)))->setType(cellType::considered);
+				(mat + ((cI)*w + (cJ + 1)))->setFGH(fN, gN, hN);
+				(mat + ((cI)*w + (cJ + 1)))->setParent(cI, cJ);
+				(mat + ((cI)*w + (cJ + 1)))->setType(cellType::considered);
+				if (!(find(consideredPoints.begin(), consideredPoints.end(), make_pair(cI, cJ + 1)) != consideredPoints.end())) {
+					consideredPoints.push_back(make_pair(cI, cJ + 1));
+				}
 			}
 		}
 
@@ -216,14 +226,17 @@ void aStarSearch(cell* mat, int sI, int sJ, int eI, int eJ,int w, int h) {
 			//new f,g,h costs
 			double fN, hN, gN;
 			gN = (mat + (cI * w + cJ))->g + 1.414;
-			hN = (cI+1, cJ + 1, eI, eJ);
+			hN = (cI + 1, cJ + 1, eI, eJ);
 			fN = gN + hN;
 			//check if cell is uninitialized or new path is more efficient than the old one
-			if ((mat + ((cI + 1)*w + (cJ + 1)))->f == FLT_MAX || (mat + ((cI + 1)*w + (cJ + 1)))->f > fN) {
+			if ((mat + ((cI + 1) * w + (cJ + 1)))->f == FLT_MAX || (mat + ((cI + 1) * w + (cJ + 1)))->f > fN) {
 				//update the cells data
-				(mat + ((cI + 1)*w + (cJ + 1)))->setFGH(fN, gN, hN);
-				(mat + ((cI + 1)*w + (cJ + 1)))->setParent(cI, cJ);
-				(mat + ((cI + 1)*w + (cJ + 1)))->setType(cellType::considered);
+				(mat + ((cI + 1) * w + (cJ + 1)))->setFGH(fN, gN, hN);
+				(mat + ((cI + 1) * w + (cJ + 1)))->setParent(cI, cJ);
+				(mat + ((cI + 1) * w + (cJ + 1)))->setType(cellType::considered);
+				if (!(find(consideredPoints.begin(), consideredPoints.end(), make_pair(cI + 1, cJ + 1)) != consideredPoints.end())) {
+					consideredPoints.push_back(make_pair(cI + 1, cJ + 1));
+				}
 			}
 		}
 
@@ -240,6 +253,9 @@ void aStarSearch(cell* mat, int sI, int sJ, int eI, int eJ,int w, int h) {
 				(mat + ((cI + 1) * w + (cJ)))->setFGH(fN, gN, hN);
 				(mat + ((cI + 1) * w + (cJ)))->setParent(cI, cJ);
 				(mat + ((cI + 1) * w + (cJ)))->setType(cellType::considered);
+				if (!(find(consideredPoints.begin(), consideredPoints.end(), make_pair(cI + 1, cJ)) != consideredPoints.end())) {
+					consideredPoints.push_back(make_pair(cI + 1, cJ));
+				}
 			}
 		}
 
@@ -256,6 +272,9 @@ void aStarSearch(cell* mat, int sI, int sJ, int eI, int eJ,int w, int h) {
 				(mat + ((cI + 1) * w + (cJ - 1)))->setFGH(fN, gN, hN);
 				(mat + ((cI + 1) * w + (cJ - 1)))->setParent(cI, cJ);
 				(mat + ((cI + 1) * w + (cJ - 1)))->setType(cellType::considered);
+				if (!(find(consideredPoints.begin(), consideredPoints.end(), make_pair(cI + 1, cJ - 1)) != consideredPoints.end())) {
+					consideredPoints.push_back(make_pair(cI + 1, cJ - 1));
+				}
 			}
 		}
 
@@ -267,27 +286,33 @@ void aStarSearch(cell* mat, int sI, int sJ, int eI, int eJ,int w, int h) {
 			hN = (cI, cJ - 1, eI, eJ);
 			fN = gN + hN;
 			//check if cell is uninitialized or new path is more efficient than the old one
-			if ((mat + ((cI) * w + (cJ - 1)))->f == FLT_MAX || (mat + ((cI) * w + (cJ - 1)))->f > fN) {
+			if ((mat + ((cI)*w + (cJ - 1)))->f == FLT_MAX || (mat + ((cI)*w + (cJ - 1)))->f > fN) {
 				//update the cells data
-				(mat + ((cI) * w + (cJ - 1)))->setFGH(fN, gN, hN);
-				(mat + ((cI) * w + (cJ - 1)))->setParent(cI, cJ);
-				(mat + ((cI) * w + (cJ - 1)))->setType(cellType::considered);
+				(mat + ((cI)*w + (cJ - 1)))->setFGH(fN, gN, hN);
+				(mat + ((cI)*w + (cJ - 1)))->setParent(cI, cJ);
+				(mat + ((cI)*w + (cJ - 1)))->setType(cellType::considered);
+				if (!(find(consideredPoints.begin(), consideredPoints.end(), make_pair(cI, cJ - 1)) != consideredPoints.end())) {
+					consideredPoints.push_back(make_pair(cI, cJ - 1));
+				}
 			}
 		}
 
 		//8th neighbour (top left) i-1,j-1
-		if (isValid(cI-1, cJ - 1, w, h, mat)) {
+		if (isValid(cI - 1, cJ - 1, w, h, mat)) {
 			//new f,g,h costs
 			double fN, hN, gN;
 			gN = (mat + (cI * w + cJ))->g + 1.414;
-			hN = (cI-1, cJ - 1, eI, eJ);
+			hN = (cI - 1, cJ - 1, eI, eJ);
 			fN = gN + hN;
 			//check if cell is uninitialized or new path is more efficient than the old one
-			if ((mat + ((cI - 1)*w + (cJ - 1)))->f == FLT_MAX || (mat + ((cI - 1)*w + (cJ - 1)))->f > fN) {
+			if ((mat + ((cI - 1) * w + (cJ - 1)))->f == FLT_MAX || (mat + ((cI - 1) * w + (cJ - 1)))->f > fN) {
 				//update the cells data
 				(mat + ((cI - 1) * w + (cJ - 1)))->setFGH(fN, gN, hN);
 				(mat + ((cI - 1) * w + (cJ - 1)))->setParent(cI, cJ);
 				(mat + ((cI - 1) * w + (cJ - 1)))->setType(cellType::considered);
+				if (!(find(consideredPoints.begin(), consideredPoints.end(), make_pair(cI - 1, cJ - 1)) != consideredPoints.end())) {
+					consideredPoints.push_back(make_pair(cI - 1, cJ - 1));
+				}
 			}
 		}
 
@@ -296,7 +321,7 @@ void aStarSearch(cell* mat, int sI, int sJ, int eI, int eJ,int w, int h) {
 		//if cells have the same f cost, then pick the one with the lower h cost
 		//if both the f cost and h cost are the same, pick any one of them arbitrarily
 		int nI, nJ;
-		findNextCell(mat,w,h,nI,nJ);
+		findNextCell(consideredPoints, mat, w,h,nI,nJ);
 		//change to the chosen cell
 		cI = nI;
 		cJ = nJ;
@@ -306,7 +331,7 @@ void aStarSearch(cell* mat, int sI, int sJ, int eI, int eJ,int w, int h) {
 int main() {
 	auto beginTime = std::chrono::high_resolution_clock::now();
 	int width, height, numChannels;
-	unsigned char* imgData = stbi_load("Maps/TestMap128.png", &width, &height, &numChannels, 0);
+	unsigned char* imgData = stbi_load("Maps/maze7.png", &width, &height, &numChannels, 0);
 
 	cout << "Size of the image: " << width << "x" << height<<endl;
 

@@ -1,3 +1,6 @@
 ﻿  Source.cpp
-D:\GitHub\AStarVisualization\AStarVis\Source.cpp(125,19): warning C4018: '<': signed/unsigned mismatch
+D:\GitHub\AStarVisualization\AStarVis\Source.cpp(96,20): warning C4018: '<': signed/unsigned mismatch
+D:\GitHub\AStarVisualization\AStarVis\Source.cpp(104,20): warning C4018: '<': signed/unsigned mismatch
+D:\GitHub\AStarVisualization\AStarVis\Source.cpp(120,21): warning C4018: '<': signed/unsigned mismatch
+D:\GitHub\AStarVisualization\AStarVis\Source.cpp(156,3): warning C4834: discarding return value of function with 'nodiscard' attribute
   AStarVis.vcxproj -> D:\GitHub\AStarVisualization\AStarVis\Debug\AStarVis.exe

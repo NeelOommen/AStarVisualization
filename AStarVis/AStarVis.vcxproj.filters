@@ -50,5 +50,14 @@
     <Image Include="Maps\TestMap128.png">
       <Filter>Resource Files\Maps</Filter>
     </Image>
+    <Image Include="Maps\maze5.png">
+      <Filter>Resource Files\Maps</Filter>
+    </Image>
+    <Image Include="Maps\maze6.png">
+      <Filter>Resource Files\Maps</Filter>
+    </Image>
+    <Image Include="Maps\maze7.png">
+      <Filter>Resource Files\Maps</Filter>
+    </Image>
   </ItemGroup>
 </Project>
