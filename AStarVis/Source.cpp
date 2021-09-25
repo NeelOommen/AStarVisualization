@@ -159,14 +159,14 @@ void backgroundGrid(SDL_Window* window, SDL_Renderer* renderer, int w, int h, ce
 		for (int j = 0; j < w; j++) {
 			r.x = j * stepSize;
 			if ((mat + (i * w + j))->retType() == cellType::wall) {
-				SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+				SDL_SetRenderDrawColor(renderer, 50, 75, 76, 255);
 			}
 			else
 			if ((mat + (i * w + j))->retType() == cellType::target) {
-				SDL_SetRenderDrawColor(renderer, 0, 0, 255,255);
+				SDL_SetRenderDrawColor(renderer, 0, 197, 154,255);
 			}
 			else {
-				SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
+				SDL_SetRenderDrawColor(renderer, 208, 253, 255, 255);
 			}
 			SDL_RenderFillRect(renderer, &r);
 		}
@@ -206,7 +206,7 @@ void aStarSearch(cell* mat, int sI, int sJ, int eI, int eJ, int w, int h, SDL_Wi
 		remove(consideredPoints.begin(), consideredPoints.end(), make_pair(cI, cJ));
 		numVisited++;
 		//draw visited cell
-		SDL_SetRenderDrawColor(renderer,255,0,0,255);
+		SDL_SetRenderDrawColor(renderer, 239, 206, 151, 255);
 		r.y = cI * stepSize;
 		r.x = cJ * stepSize;
 		SDL_RenderFillRect(renderer, &r);
@@ -220,7 +220,7 @@ void aStarSearch(cell* mat, int sI, int sJ, int eI, int eJ, int w, int h, SDL_Wi
 		}
 
 		//update all the valid neighbours
-		SDL_SetRenderDrawColor(renderer, 0, 128, 0, 255);
+		SDL_SetRenderDrawColor(renderer, 147, 248, 179, 255);
 		//1st neighbour (up) i-1,j
 		if (isValid(cI - 1, cJ, w, h, mat)) {
 			//new f,g,h costs
@@ -415,28 +415,15 @@ void aStarSearch(cell* mat, int sI, int sJ, int eI, int eJ, int w, int h, SDL_Wi
 		//change to the chosen cell
 		cI = nI;
 		cJ = nJ;
-		/*if (SDL_PollEvent(&windowEvent)) {
+		if (SDL_PollEvent(&windowEvent)) {
 			if (windowEvent.type == SDL_QUIT) {
 				break;
 			}
 		}
 
-		//background
-		SDL_SetRenderDrawColor(renderer, 0,0,0,255);
-
-		SDL_RenderClear(renderer);
-
-		SDL_Rect r;
-		r.x = 50;
-		r.y = 50;
-		r.w = 250;
-		r.h = 250;
-
-		SDL_SetRenderDrawColor(renderer, 0, 0, 255,255);
-		SDL_RenderFillRect(renderer, &r);
-		SDL_RenderPresent(renderer);*/
-
-		//backgroundGrid(window, renderer, w, h,mat);
+	}
+	if (!foundGoal) {
+		cout << "\nPath not found";
 	}
 }
 
@@ -465,7 +452,7 @@ int main(int argc, char* args[]) {
 
 	auto beginTime = std::chrono::high_resolution_clock::now();
 	int width, height, numChannels;
-	unsigned char* imgData = stbi_load("Maps/final2.png", &width, &height, &numChannels, 0);
+	unsigned char* imgData = stbi_load("Maps/sanity.png", &width, &height, &numChannels, 0);
 
 	cout << "Size of the image: " << width << "x" << height<<endl;
 
@@ -533,7 +520,7 @@ int main(int argc, char* args[]) {
 	SDL_Rect bR;
 	bR.w = stepSize - 1;
 	bR.h = stepSize - 1;
-	SDL_SetRenderDrawColor(renderer,255,255,0,255);
+	SDL_SetRenderDrawColor(renderer, 0, 173, 190, 255);
 	for (int i=0; width*height;i++) {
 		int l, k;
 		l = bI;

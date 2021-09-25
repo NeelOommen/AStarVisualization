@@ -71,5 +71,8 @@
     <Image Include="Maps\final2.png">
       <Filter>Resource Files\Maps</Filter>
     </Image>
+    <Image Include="Maps\sanity.png">
+      <Filter>Resource Files\Maps</Filter>
+    </Image>
   </ItemGroup>
 </Project>

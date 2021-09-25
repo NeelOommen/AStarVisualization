@@ -171,6 +171,7 @@
     <Image Include="Maps\maze5.png" />
     <Image Include="Maps\maze6.png" />
     <Image Include="Maps\maze7.png" />
+    <Image Include="Maps\sanity.png" />
     <Image Include="Maps\smallTest.png" />
     <Image Include="Maps\testMap.png" />
     <Image Include="Maps\TestMap128.png" />
