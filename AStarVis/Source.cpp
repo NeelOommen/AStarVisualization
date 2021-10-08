@@ -1,10 +1,9 @@
 #include <iostream>
-#include <vector>
-#include <iterator>
 #include <chrono>
 #include <stb/stb_image.h>
 #include <SDL.h>
 #include <conio.h>
+#include <set>
 
 using namespace std;
 
@@ -29,7 +28,9 @@ private:
 	int parentI;
 	int parentJ;
 public:
-	double g, h, f;
+	double g;
+	double h;
+	double f;
 	
 	void setData(int r, int g, int b, int xCoord, int yCoord, int& sources, int& targets) {
 		x = xCoord;
@@ -52,10 +53,10 @@ public:
 	cellType retType() { return type; }
 	int retX() { return x; }
 	int retY() { return y; }
-	void setFGH(double _f, double _g, double _h) {
-		f = _f;
-		g = _g;
-		h = _h;
+	void setFGH(double fI, double gI, double hI) {
+		f = fI;
+		g = gI;
+		h = hI;
 	}
 	void setParent(int _i, int _j) {
 		parentI = _i;
@@ -73,13 +74,13 @@ public:
 		f = FLT_MAX;
 		g = FLT_MAX;
 		h = FLT_MAX;
-		parentI = -1;
-		parentJ = -1;
+		parentI = INT_MAX;
+		parentJ = INT_MAX;
 	}
 
-	void getParents(int &inI, int &inJ) {
-		inI = parentI;
-		inJ = parentJ;
+	void getParents(int &i, int &j) {
+		i = parentI;
+		j = parentJ;
 	}
 
 };
@@ -87,7 +88,7 @@ public:
 
 
 double hValue(int i,int j,int desti,int destj) {
-	return((double)sqrt(((i-desti)*(i-desti))-((j-destj)*(j-destj))));
+	return((double)sqrt(((i-desti)*(i-desti))+((j-destj)*(j-destj))));
 }
 
 void cleanup(unsigned char* img, cell* cellData) {
@@ -98,53 +99,15 @@ void cleanup(unsigned char* img, cell* cellData) {
 bool isValid(int i, int j, int w, int h, cell* mat) {
 	bool flag = false;
 	if (i >= 0 && i < h) {
-		if (j >= 0 && j < w && ((mat + (i*w + j))->retType()==cellType::walkable || (mat + (i * w + j))->retType() == cellType::considered || (mat + (i * w + j))->retType() == cellType::target) && !((mat + (i * w + j))->retType() == cellType::visited)) {
-			flag = true;
+		if (j >= 0 && j < w) {
+			if (((mat + (i * w + j))->retType() == cellType::walkable || (mat + (i * w + j))->retType() == cellType::considered || (mat + (i * w + j))->retType() == cellType::target) && (mat + (i * w + j))->retType() != cellType::visited && (mat + (i * w + j))->retType() != cellType::wall) {
+				flag = true;
+			}
 		}
 	}
 	return flag;
 }
-
-void findNextCell(vector<pair<int,int>> v,cell* mat, int w, int h, int& nI, int& nJ) {
-	//first find min f cost
-	double mF = FLT_MAX;
-	for (int i = 0; i < v.size();i++) {
-		if ((mat + (v[i].first * w + v[i].second))->f <mF) {
-			mF = (mat + (v[i].first * w + v[i].second))->f;
-		}
-	}
-
-	//points with f equal to minimum
-	vector<pair<int, int>> minPoints;
-	for (int i = 0; i < v.size(); i++) {
-		if ((mat + (v[i].first * w + v[i].second))->f == mF) {
-			minPoints.push_back(make_pair(v[i].first, v[i].second));
-		}
-	}
-
-	//min h cost
-	int mI, mJ;
-	mI = -1;
-	mJ = -1;
-	if (minPoints.size() == 1) {
-		mI = minPoints[0].first;
-		mJ = minPoints[0].second;
-	}
-	else {
-		double minH = FLT_MAX;
-		for (int i = 0; i < minPoints.size(); i++) {
-			if ((mat + (minPoints[i].first * w + minPoints[i].second))->h < minH) {
-				minH = (mat + (minPoints[i].first * w + minPoints[i].second))->h;
-				mI = minPoints[i].first;
-				mJ = minPoints[i].second;
-			}
-		}
-	}
-
-	//set values 
-	nI = mI;
-	nJ = mJ;
-}
+//((mat + (i*w + j))->retType()==cellType::walkable || (mat + (i * w + j))->retType() == cellType::considered || (mat + (i * w + j))->retType() == cellType::target) && !((mat + (i * w + j))->retType() == cellType::visited
 
 void backgroundGrid(SDL_Window* window, SDL_Renderer* renderer, int w, int h, cell* mat) {
 	SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
@@ -159,14 +122,14 @@ void backgroundGrid(SDL_Window* window, SDL_Renderer* renderer, int w, int h, ce
 		for (int j = 0; j < w; j++) {
 			r.x = j * stepSize;
 			if ((mat + (i * w + j))->retType() == cellType::wall) {
-				SDL_SetRenderDrawColor(renderer, 50, 75, 76, 255);
+				SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
 			}
 			else
 			if ((mat + (i * w + j))->retType() == cellType::target) {
-				SDL_SetRenderDrawColor(renderer, 0, 197, 154,255);
+				SDL_SetRenderDrawColor(renderer, 0, 255, 0,255);
 			}
 			else {
-				SDL_SetRenderDrawColor(renderer, 208, 253, 255, 255);
+				SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
 			}
 			SDL_RenderFillRect(renderer, &r);
 		}
@@ -178,7 +141,9 @@ void aStarSearch(cell* mat, int sI, int sJ, int eI, int eJ, int w, int h, SDL_Wi
 
 	//Setting initial conditions for the first cell to be chosen
 	(mat + (sI * w + sJ))->setFGH(0.0, 0.0, 0.0);
-	(mat + (sI * w + sJ))->setParent(sI, sJ);
+	(mat + (sI * w + sJ))->setParent(-1, -1);
+
+	set<pair<double,pair<int,int>>> cons;
 
 	bool foundGoal = false;
 	int numVisited = 0;
@@ -192,21 +157,29 @@ void aStarSearch(cell* mat, int sI, int sJ, int eI, int eJ, int w, int h, SDL_Wi
 	r.w = stepSize - 1;
 	r.h = stepSize - 1;
 
-	vector<pair<int, int>> consideredPoints;
-	consideredPoints.push_back(make_pair(sI,sJ));
+	cons.insert(make_pair(0.0, make_pair(sI, sJ)));
 
 	SDL_Event windowEvent;
 
 	//continue here
 	//iterate till goal found, or all cells visited
-	for (; !foundGoal && numVisited < (w * h);) {
+	for (; !foundGoal && numVisited < (w * h) && cons.size() > 0;) {
+		//pick the point
+		pair<double, pair<int, int>> p = *cons.begin();
+		cI = p.second.first;
+		cJ = p.second.second;
+
+		cons.erase(cons.begin());
 		//set the current cell as visited/closed
+		if (!(cI >= 0 && cI < h) || !(cJ >= 0 && cJ < w)) {
+			cout << "\nInvalid Index "<<cI<<" "<<cJ;
+			break;
+		}
 		(mat + (cI * w + cJ))->setType(cellType::visited);
-		(mat + (cI * w + cJ))->setFGH(FLT_MAX, FLT_MAX, FLT_MAX);
-		remove(consideredPoints.begin(), consideredPoints.end(), make_pair(cI, cJ));
+
 		numVisited++;
 		//draw visited cell
-		SDL_SetRenderDrawColor(renderer, 239, 206, 151, 255);
+		SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
 		r.y = cI * stepSize;
 		r.x = cJ * stepSize;
 		SDL_RenderFillRect(renderer, &r);
@@ -220,23 +193,22 @@ void aStarSearch(cell* mat, int sI, int sJ, int eI, int eJ, int w, int h, SDL_Wi
 		}
 
 		//update all the valid neighbours
-		SDL_SetRenderDrawColor(renderer, 147, 248, 179, 255);
+		SDL_SetRenderDrawColor(renderer, 0, 255, 0, 255);
 		//1st neighbour (up) i-1,j
 		if (isValid(cI - 1, cJ, w, h, mat)) {
 			//new f,g,h costs
 			double fN, hN, gN;
 			gN = (mat + (cI * w + cJ))->g + 1.0;
-			hN = (cI - 1, cJ, eI, eJ);
-			fN = gN + hN;
+			hN = hValue(cI - 1, cJ, eI, eJ);
+			fN = hN + gN;
 			//check if cell is uninitialized or new path is more efficient than the old one
 			if ((mat + ((cI - 1) * w + cJ))->f == FLT_MAX || (mat + ((cI - 1) * w + cJ))->f > fN) {
 				//update the cells data
 				(mat + ((cI - 1) * w + cJ))->setFGH(fN, gN, hN);
 				(mat + ((cI - 1) * w + cJ))->setParent(cI, cJ);
 				(mat + ((cI - 1) * w + cJ))->setType(cellType::considered);
-				if (!(find(consideredPoints.begin(), consideredPoints.end(), make_pair(cI - 1, cJ)) != consideredPoints.end())) {
-					consideredPoints.push_back(make_pair(cI-1,cJ));
-				}
+				cons.insert(make_pair(fN,make_pair(cI-1,cJ)));
+				
 				//mark considered rectangle
 				r.y = (cI - 1) * stepSize;
 				r.x = (cJ) * stepSize;
@@ -249,17 +221,16 @@ void aStarSearch(cell* mat, int sI, int sJ, int eI, int eJ, int w, int h, SDL_Wi
 			//new f,g,h costs
 			double fN, hN, gN;
 			gN = (mat + (cI * w + cJ))->g + 1.414;
-			hN = (cI - 1, cJ + 1, eI, eJ);
-			fN = gN + hN;
+			hN = hValue(cI - 1, cJ + 1, eI, eJ);
+			fN = hN + gN;
 			//check if cell is uninitialized or new path is more efficient than the old one
 			if ((mat + ((cI - 1) * w + (cJ + 1)))->f == FLT_MAX || (mat + ((cI - 1) * w + (cJ + 1)))->f > fN) {
 				//update the cells data
 				(mat + ((cI - 1) * w + (cJ + 1)))->setFGH(fN, gN, hN);
 				(mat + ((cI - 1) * w + (cJ + 1)))->setParent(cI, cJ);
 				(mat + ((cI - 1) * w + (cJ + 1)))->setType(cellType::considered);
-				if (!(find(consideredPoints.begin(), consideredPoints.end(), make_pair(cI - 1, cJ + 1)) != consideredPoints.end())) {
-					consideredPoints.push_back(make_pair(cI - 1, cJ + 1));
-				}
+				cons.insert(make_pair(fN, make_pair(cI - 1, cJ+1)));
+				
 				//mark considered rectangle
 				r.y = (cI - 1) * stepSize;
 				r.x = (cJ + 1) * stepSize;
@@ -272,17 +243,16 @@ void aStarSearch(cell* mat, int sI, int sJ, int eI, int eJ, int w, int h, SDL_Wi
 			//new f,g,h costs
 			double fN, hN, gN;
 			gN = (mat + (cI * w + cJ))->g + 1.0;
-			hN = (cI, cJ + 1, eI, eJ);
-			fN = gN + hN;
+			hN = hValue(cI, cJ + 1, eI, eJ);
+			fN = hN + gN;
 			//check if cell is uninitialized or new path is more efficient than the old one
 			if ((mat + ((cI)*w + (cJ + 1)))->f == FLT_MAX || (mat + ((cI)*w + (cJ + 1)))->f > fN) {
 				//update the cells data
 				(mat + ((cI)*w + (cJ + 1)))->setFGH(fN, gN, hN);
 				(mat + ((cI)*w + (cJ + 1)))->setParent(cI, cJ);
 				(mat + ((cI)*w + (cJ + 1)))->setType(cellType::considered);
-				if (!(find(consideredPoints.begin(), consideredPoints.end(), make_pair(cI, cJ + 1)) != consideredPoints.end())) {
-					consideredPoints.push_back(make_pair(cI, cJ + 1));
-				}
+				cons.insert(make_pair(fN, make_pair(cI, cJ+1)));
+				
 				//mark considered rectangle
 				r.y = (cI) * stepSize;
 				r.x = (cJ + 1) * stepSize;
@@ -295,17 +265,16 @@ void aStarSearch(cell* mat, int sI, int sJ, int eI, int eJ, int w, int h, SDL_Wi
 			//new f,g,h costs
 			double fN, hN, gN;
 			gN = (mat + (cI * w + cJ))->g + 1.414;
-			hN = (cI + 1, cJ + 1, eI, eJ);
-			fN = gN + hN;
+			hN = hValue(cI + 1, cJ + 1, eI, eJ);
+			fN = hN + gN;
 			//check if cell is uninitialized or new path is more efficient than the old one
 			if ((mat + ((cI + 1) * w + (cJ + 1)))->f == FLT_MAX || (mat + ((cI + 1) * w + (cJ + 1)))->f > fN) {
 				//update the cells data
 				(mat + ((cI + 1) * w + (cJ + 1)))->setFGH(fN, gN, hN);
 				(mat + ((cI + 1) * w + (cJ + 1)))->setParent(cI, cJ);
 				(mat + ((cI + 1) * w + (cJ + 1)))->setType(cellType::considered);
-				if (!(find(consideredPoints.begin(), consideredPoints.end(), make_pair(cI + 1, cJ + 1)) != consideredPoints.end())) {
-					consideredPoints.push_back(make_pair(cI + 1, cJ + 1));
-				}
+				cons.insert(make_pair(fN, make_pair(cI + 1, cJ + 1)));
+				
 				//mark considered rectangle
 				r.y = (cI + 1) * stepSize;
 				r.x = (cJ + 1) * stepSize;
@@ -318,17 +287,16 @@ void aStarSearch(cell* mat, int sI, int sJ, int eI, int eJ, int w, int h, SDL_Wi
 			//new f,g,h costs
 			double fN, hN, gN;
 			gN = (mat + (cI * w + cJ))->g + 1.0;
-			hN = (cI + 1, cJ, eI, eJ);
-			fN = gN + hN;
+			hN = hValue(cI + 1, cJ, eI, eJ);
+			fN = hN + gN;
 			//check if cell is uninitialized or new path is more efficient than the old one
 			if ((mat + ((cI + 1) * w + (cJ)))->f == FLT_MAX || (mat + ((cI + 1) * w + (cJ)))->f > fN) {
 				//update the cells data
 				(mat + ((cI + 1) * w + (cJ)))->setFGH(fN, gN, hN);
 				(mat + ((cI + 1) * w + (cJ)))->setParent(cI, cJ);
 				(mat + ((cI + 1) * w + (cJ)))->setType(cellType::considered);
-				if (!(find(consideredPoints.begin(), consideredPoints.end(), make_pair(cI + 1, cJ)) != consideredPoints.end())) {
-					consideredPoints.push_back(make_pair(cI + 1, cJ));
-				}
+				cons.insert(make_pair(fN, make_pair(cI + 1, cJ)));
+				
 				//mark considered rectangle
 				r.y = (cI + 1) * stepSize;
 				r.x = (cJ) * stepSize;
@@ -341,17 +309,16 @@ void aStarSearch(cell* mat, int sI, int sJ, int eI, int eJ, int w, int h, SDL_Wi
 			//new f,g,h costs
 			double fN, hN, gN;
 			gN = (mat + (cI * w + cJ))->g + 1.414;
-			hN = (cI + 1, cJ - 1, eI, eJ);
-			fN = gN + hN;
+			hN = hValue(cI + 1, cJ - 1, eI, eJ);
+			fN = hN + gN;
 			//check if cell is uninitialized or new path is more efficient than the old one
 			if ((mat + ((cI + 1) * w + (cJ - 1)))->f == FLT_MAX || (mat + ((cI + 1) * w + (cJ - 1)))->f > fN) {
 				//update the cells data
 				(mat + ((cI + 1) * w + (cJ - 1)))->setFGH(fN, gN, hN);
 				(mat + ((cI + 1) * w + (cJ - 1)))->setParent(cI, cJ);
 				(mat + ((cI + 1) * w + (cJ - 1)))->setType(cellType::considered);
-				if (!(find(consideredPoints.begin(), consideredPoints.end(), make_pair(cI + 1, cJ - 1)) != consideredPoints.end())) {
-					consideredPoints.push_back(make_pair(cI + 1, cJ - 1));
-				}
+				cons.insert(make_pair(fN, make_pair(cI + 1, cJ - 1)));
+				
 				//mark considered rectangle
 				r.y = (cI + 1) * stepSize;
 				r.x = (cJ - 1) * stepSize;
@@ -364,17 +331,16 @@ void aStarSearch(cell* mat, int sI, int sJ, int eI, int eJ, int w, int h, SDL_Wi
 			//new f,g,h costs
 			double fN, hN, gN;
 			gN = (mat + (cI * w + cJ))->g + 1.0;
-			hN = (cI, cJ - 1, eI, eJ);
-			fN = gN + hN;
+			hN = hValue(cI, cJ - 1, eI, eJ);
+			fN = hN + gN;
 			//check if cell is uninitialized or new path is more efficient than the old one
 			if ((mat + ((cI)*w + (cJ - 1)))->f == FLT_MAX || (mat + ((cI)*w + (cJ - 1)))->f > fN) {
 				//update the cells data
 				(mat + ((cI)*w + (cJ - 1)))->setFGH(fN, gN, hN);
 				(mat + ((cI)*w + (cJ - 1)))->setParent(cI, cJ);
 				(mat + ((cI)*w + (cJ - 1)))->setType(cellType::considered);
-				if (!(find(consideredPoints.begin(), consideredPoints.end(), make_pair(cI, cJ - 1)) != consideredPoints.end())) {
-					consideredPoints.push_back(make_pair(cI, cJ - 1));
-				}
+				cons.insert(make_pair(fN, make_pair(cI, cJ - 1)));
+				
 				//mark considered rectangle
 				r.y = (cI) * stepSize;
 				r.x = (cJ - 1) * stepSize;
@@ -387,17 +353,16 @@ void aStarSearch(cell* mat, int sI, int sJ, int eI, int eJ, int w, int h, SDL_Wi
 			//new f,g,h costs
 			double fN, hN, gN;
 			gN = (mat + (cI * w + cJ))->g + 1.414;
-			hN = (cI - 1, cJ - 1, eI, eJ);
-			fN = gN + hN;
+			hN = hValue(cI - 1, cJ - 1, eI, eJ);
+			fN = hN + gN;
 			//check if cell is uninitialized or new path is more efficient than the old one
 			if ((mat + ((cI - 1) * w + (cJ - 1)))->f == FLT_MAX || (mat + ((cI - 1) * w + (cJ - 1)))->f > fN) {
 				//update the cells data
 				(mat + ((cI - 1) * w + (cJ - 1)))->setFGH(fN, gN, hN);
 				(mat + ((cI - 1) * w + (cJ - 1)))->setParent(cI, cJ);
 				(mat + ((cI - 1) * w + (cJ - 1)))->setType(cellType::considered);
-				if (!(find(consideredPoints.begin(), consideredPoints.end(), make_pair(cI - 1, cJ - 1)) != consideredPoints.end())) {
-					consideredPoints.push_back(make_pair(cI - 1, cJ - 1));
-				}
+				cons.insert(make_pair(fN, make_pair(cI - 1, cJ - 1)));
+
 				//mark considered rectangle
 				r.y = (cI - 1) * stepSize;
 				r.x = (cJ - 1) * stepSize;
@@ -410,11 +375,6 @@ void aStarSearch(cell* mat, int sI, int sJ, int eI, int eJ, int w, int h, SDL_Wi
 		//the node visited next will be the one with the least f cost
 		//if cells have the same f cost, then pick the one with the lower h cost
 		//if both the f cost and h cost are the same, pick any one of them arbitrarily
-		int nI, nJ;
-		findNextCell(consideredPoints, mat, w,h,nI,nJ);
-		//change to the chosen cell
-		cI = nI;
-		cJ = nJ;
 		if (SDL_PollEvent(&windowEvent)) {
 			if (windowEvent.type == SDL_QUIT) {
 				break;
@@ -438,7 +398,7 @@ int main(int argc, char* args[]) {
 	}
 
 	//Create the SDL window
-	SDL_Window* window = SDL_CreateWindow("Pathfinder", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, WIDTH, HEIGHT, SDL_WINDOW_ALLOW_HIGHDPI);
+	SDL_Window* window = SDL_CreateWindow("20BCE2000, Neel Ittyerah Oommen", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, WIDTH, HEIGHT, SDL_WINDOW_ALLOW_HIGHDPI);
 
 	//Verify window creation
 	if (window == NULL) {
@@ -452,11 +412,11 @@ int main(int argc, char* args[]) {
 
 	auto beginTime = std::chrono::high_resolution_clock::now();
 	int width, height, numChannels;
-	unsigned char* imgData = stbi_load("Maps/sanity.png", &width, &height, &numChannels, 0);
+	unsigned char* imgData = stbi_load("Maps/final4.png", &width, &height, &numChannels, 0);
 
 	cout << "Size of the image: " << width << "x" << height<<endl;
 
-	//load data into matrix of cells
+	//load data into matrix of cell
 	cell* mat = new cell[width * height];
 	unsigned bytePerPixel = numChannels;
 	int targets = 0;
@@ -487,30 +447,15 @@ int main(int argc, char* args[]) {
 		cleanup(imgData,mat);
 		exit(0);
 	}
+	else {
+		cout << "\nStart: " << startI << " " << startJ;
+		cout << "\nEnd: " << endI << " " << endJ;
+	}
 	
 	backgroundGrid(window, renderer, width, height, mat);
 
 	//actual search
 	aStarSearch(mat, startI,startJ, endI, endJ,width,height,window,renderer);
-
-	//debug for the map
-	/*cout << "\n";
-	for (int i = 0; i < width; i++) {
-		for (int j = 0; j < height; j++) {
-			int c = (int)(mat + (i * width + j))->retType();
-			if (c == (int)cellType::visited) {
-				cout << "X";
-			}
-			else
-			if (c == (int)cellType::wall) {
-					cout << "|";
-			}
-			else {
-				cout << ".";
-			}
-		}
-		cout << endl;
-	}*/
 
 	//back track actual found path
 	int bI, bJ;
@@ -520,17 +465,14 @@ int main(int argc, char* args[]) {
 	SDL_Rect bR;
 	bR.w = stepSize - 1;
 	bR.h = stepSize - 1;
-	SDL_SetRenderDrawColor(renderer, 0, 173, 190, 255);
+	SDL_SetRenderDrawColor(renderer, 255, 255, 0, 255);
 	for (int i=0; width*height;i++) {
-		int l, k;
-		l = bI;
-		k = bJ;
 		bR.y = bI * stepSize;
 		bR.x= bJ * stepSize;
 		SDL_RenderFillRect(renderer, &bR);
 		SDL_RenderPresent(renderer);
 		(mat + (bI * width + bJ))->getParents(bI,bJ);
-		if (bI == l && bJ == k) {
+		if (bI == -1 && bJ == -1) {
 			break;
 		}
 	}

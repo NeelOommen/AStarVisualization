@@ -32,37 +32,7 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <Image Include="Maps\testMap.png">
-      <Filter>Resource Files\Maps</Filter>
-    </Image>
-    <Image Include="Maps\smallTest.png">
-      <Filter>Resource Files\Maps</Filter>
-    </Image>
     <Image Include="Maps\testMap16.png">
-      <Filter>Resource Files\Maps</Filter>
-    </Image>
-    <Image Include="Maps\AryanMaze.png">
-      <Filter>Resource Files\Maps</Filter>
-    </Image>
-    <Image Include="Maps\AryanMaze2.png">
-      <Filter>Resource Files\Maps</Filter>
-    </Image>
-    <Image Include="Maps\AryanMaze3.png">
-      <Filter>Resource Files\Maps</Filter>
-    </Image>
-    <Image Include="Maps\TestMap128.png">
-      <Filter>Resource Files\Maps</Filter>
-    </Image>
-    <Image Include="Maps\maze5.png">
-      <Filter>Resource Files\Maps</Filter>
-    </Image>
-    <Image Include="Maps\maze6.png">
-      <Filter>Resource Files\Maps</Filter>
-    </Image>
-    <Image Include="Maps\maze7.png">
-      <Filter>Resource Files\Maps</Filter>
-    </Image>
-    <Image Include="Maps\testMap512.png">
       <Filter>Resource Files\Maps</Filter>
     </Image>
     <Image Include="Maps\finalMaze.png">
@@ -71,7 +41,10 @@
     <Image Include="Maps\final2.png">
       <Filter>Resource Files\Maps</Filter>
     </Image>
-    <Image Include="Maps\sanity.png">
+    <Image Include="Maps\final3.png">
+      <Filter>Resource Files\Maps</Filter>
+    </Image>
+    <Image Include="Maps\final4.png">
       <Filter>Resource Files\Maps</Filter>
     </Image>
   </ItemGroup>
