@@ -1,2 +1,10 @@
 ﻿  Source.cpp
+D:\GitHub\AStarVisualization\AStarVis\Source.cpp(228,13): warning C4834: discarding return value of function with 'nodiscard' attribute
+D:\GitHub\AStarVisualization\AStarVis\Source.cpp(229,13): warning C4834: discarding return value of function with 'nodiscard' attribute
+D:\GitHub\AStarVisualization\AStarVis\Source.cpp(230,13): warning C4834: discarding return value of function with 'nodiscard' attribute
+D:\GitHub\AStarVisualization\AStarVis\Source.cpp(231,13): warning C4834: discarding return value of function with 'nodiscard' attribute
+D:\GitHub\AStarVisualization\AStarVis\Source.cpp(232,13): warning C4834: discarding return value of function with 'nodiscard' attribute
+D:\GitHub\AStarVisualization\AStarVis\Source.cpp(233,13): warning C4834: discarding return value of function with 'nodiscard' attribute
+D:\GitHub\AStarVisualization\AStarVis\Source.cpp(234,13): warning C4834: discarding return value of function with 'nodiscard' attribute
+D:\GitHub\AStarVisualization\AStarVis\Source.cpp(235,13): warning C4834: discarding return value of function with 'nodiscard' attribute
   AStarVis.vcxproj -> D:\GitHub\AStarVisualization\AStarVis\Debug\AStarVis.exe

@@ -4,6 +4,8 @@
 #include <SDL.h>
 #include <conio.h>
 #include <set>
+#include <thread>
+#include <future>
 
 using namespace std;
 
@@ -219,198 +221,195 @@ void aStarSearch(cell* mat, int sI, int sJ, int eI, int eJ, int w, int h, SDL_Wi
 
 		//update all the valid neighbours
 		SDL_SetRenderDrawColor(renderer, 0, 255, 0, 255);
-		//1st neighbour (up) i-1,j
-		//if (isValid(cI - 1, cJ, w, h, mat)) {
-		//	//new f,g,h costs
-		//	double fN, hN, gN;
-		//	gN = (mat + (cI * w + cJ))->g + 1.0;
-		//	hN = hValue(cI - 1, cJ, eI, eJ);
-		//	fN = hN + gN;
-		//	//check if cell is uninitialized or new path is more efficient than the old one
-		//	if ((mat + ((cI - 1) * w + cJ))->f == FLT_MAX || (mat + ((cI - 1) * w + cJ))->f > fN) {
-		//		//update the cells data
-		//		(mat + ((cI - 1) * w + cJ))->setFGH(fN, gN, hN);
-		//		(mat + ((cI - 1) * w + cJ))->setParent(cI, cJ);
-		//		(mat + ((cI - 1) * w + cJ))->setType(cellType::considered);
-		//		cons.insert(make_pair(fN,make_pair(cI-1,cJ)));
-		//		
-		//		//mark considered rectangle
-		//		r.y = (cI - 1) * stepSize;
-		//		r.x = (cJ) * stepSize;
-		//		SDL_RenderFillRect(renderer, &r);
-		//	}
-		//}
 
-		checkNeighbour(cons, cI, cJ, -1, 0, eI, eJ,  w, h, mat, renderer, r, stepSize);
+#define ASYNC 1
+#if ASYNC
+		//multithreaded
+		std::async(std::launch::async, checkNeighbour, std::ref(cons), cI, cJ, -1, 0, eI, eJ, w, h, mat, renderer, r, stepSize);
+		std::async(std::launch::async, checkNeighbour, std::ref(cons), cI, cJ, -1, 1, eI, eJ, w, h, mat, renderer, r, stepSize);
+		std::async(std::launch::async, checkNeighbour, std::ref(cons), cI, cJ, 0, 1, eI, eJ, w, h, mat, renderer, r, stepSize);
+		std::async(std::launch::async, checkNeighbour, std::ref(cons), cI, cJ, 1, 1, eI, eJ, w, h, mat, renderer, r, stepSize);
+		std::async(std::launch::async, checkNeighbour, std::ref(cons), cI, cJ, 1, 0, eI, eJ, w, h, mat, renderer, r, stepSize);
+		std::async(std::launch::async, checkNeighbour, std::ref(cons), cI, cJ, 1, -1, eI, eJ, w, h, mat, renderer, r, stepSize);
+		std::async(std::launch::async, checkNeighbour, std::ref(cons), cI, cJ, 0, -1, eI, eJ, w, h, mat, renderer, r, stepSize);
+		std::async(std::launch::async, checkNeighbour, std::ref(cons), cI, cJ, -1, -1, eI, eJ, w, h, mat, renderer, r, stepSize);
+#else
+		//1st neighbour (up) i-1,j
+		if (isValid(cI - 1, cJ, w, h, mat)) {
+			//new f,g,h costs
+			double fN, hN, gN;
+			gN = (mat + (cI * w + cJ))->g + 1.0;
+			hN = hValue(cI - 1, cJ, eI, eJ);
+			fN = hN + gN;
+			//check if cell is uninitialized or new path is more efficient than the old one
+			if ((mat + ((cI - 1) * w + cJ))->f == FLT_MAX || (mat + ((cI - 1) * w + cJ))->f > fN) {
+				//update the cells data
+				(mat + ((cI - 1) * w + cJ))->setFGH(fN, gN, hN);
+				(mat + ((cI - 1) * w + cJ))->setParent(cI, cJ);
+				(mat + ((cI - 1) * w + cJ))->setType(cellType::considered);
+				cons.insert(make_pair(fN,make_pair(cI-1,cJ)));
+				
+				//mark considered rectangle
+				r.y = (cI - 1) * stepSize;
+				r.x = (cJ) * stepSize;
+				SDL_RenderFillRect(renderer, &r);
+			}
+		}
 
 		//2nd neighbour (top right) i-1,j+1
-		//if (isValid(cI - 1, cJ + 1, w, h, mat)) {
-		//	//new f,g,h costs
-		//	double fN, hN, gN;
-		//	gN = (mat + (cI * w + cJ))->g + 1.414;
-		//	hN = hValue(cI - 1, cJ + 1, eI, eJ);
-		//	fN = hN + gN;
-		//	//check if cell is uninitialized or new path is more efficient than the old one
-		//	if ((mat + ((cI - 1) * w + (cJ + 1)))->f == FLT_MAX || (mat + ((cI - 1) * w + (cJ + 1)))->f > fN) {
-		//		//update the cells data
-		//		(mat + ((cI - 1) * w + (cJ + 1)))->setFGH(fN, gN, hN);
-		//		(mat + ((cI - 1) * w + (cJ + 1)))->setParent(cI, cJ);
-		//		(mat + ((cI - 1) * w + (cJ + 1)))->setType(cellType::considered);
-		//		cons.insert(make_pair(fN, make_pair(cI - 1, cJ+1)));
-		//		
-		//		//mark considered rectangle
-		//		r.y = (cI - 1) * stepSize;
-		//		r.x = (cJ + 1) * stepSize;
-		//		SDL_RenderFillRect(renderer, &r);
-		//	}
-		//}
-
-		checkNeighbour(cons, cI, cJ, -1, 1, eI, eJ, w, h, mat, renderer, r, stepSize);
+		if (isValid(cI - 1, cJ + 1, w, h, mat)) {
+			//new f,g,h costs
+			double fN, hN, gN;
+			gN = (mat + (cI * w + cJ))->g + 1.414;
+			hN = hValue(cI - 1, cJ + 1, eI, eJ);
+			fN = hN + gN;
+			//check if cell is uninitialized or new path is more efficient than the old one
+			if ((mat + ((cI - 1) * w + (cJ + 1)))->f == FLT_MAX || (mat + ((cI - 1) * w + (cJ + 1)))->f > fN) {
+				//update the cells data
+				(mat + ((cI - 1) * w + (cJ + 1)))->setFGH(fN, gN, hN);
+				(mat + ((cI - 1) * w + (cJ + 1)))->setParent(cI, cJ);
+				(mat + ((cI - 1) * w + (cJ + 1)))->setType(cellType::considered);
+				cons.insert(make_pair(fN, make_pair(cI - 1, cJ+1)));
+				
+				//mark considered rectangle
+				r.y = (cI - 1) * stepSize;
+				r.x = (cJ + 1) * stepSize;
+				SDL_RenderFillRect(renderer, &r);
+			}
+		}
 
 		//3rd neighbour (right) i,j+1
-		//if (isValid(cI, cJ + 1, w, h, mat)) {
-		//	//new f,g,h costs
-		//	double fN, hN, gN;
-		//	gN = (mat + (cI * w + cJ))->g + 1.0;
-		//	hN = hValue(cI, cJ + 1, eI, eJ);
-		//	fN = hN + gN;
-		//	//check if cell is uninitialized or new path is more efficient than the old one
-		//	if ((mat + ((cI)*w + (cJ + 1)))->f == FLT_MAX || (mat + ((cI)*w + (cJ + 1)))->f > fN) {
-		//		//update the cells data
-		//		(mat + ((cI)*w + (cJ + 1)))->setFGH(fN, gN, hN);
-		//		(mat + ((cI)*w + (cJ + 1)))->setParent(cI, cJ);
-		//		(mat + ((cI)*w + (cJ + 1)))->setType(cellType::considered);
-		//		cons.insert(make_pair(fN, make_pair(cI, cJ+1)));
-		//		
-		//		//mark considered rectangle
-		//		r.y = (cI) * stepSize;
-		//		r.x = (cJ + 1) * stepSize;
-		//		SDL_RenderFillRect(renderer, &r);
-		//	}
-		//}
-
-		checkNeighbour(cons, cI, cJ, 0, 1, eI, eJ, w, h, mat, renderer, r, stepSize);
+		if (isValid(cI, cJ + 1, w, h, mat)) {
+			//new f,g,h costs
+			double fN, hN, gN;
+			gN = (mat + (cI * w + cJ))->g + 1.0;
+			hN = hValue(cI, cJ + 1, eI, eJ);
+			fN = hN + gN;
+			//check if cell is uninitialized or new path is more efficient than the old one
+			if ((mat + ((cI)*w + (cJ + 1)))->f == FLT_MAX || (mat + ((cI)*w + (cJ + 1)))->f > fN) {
+				//update the cells data
+				(mat + ((cI)*w + (cJ + 1)))->setFGH(fN, gN, hN);
+				(mat + ((cI)*w + (cJ + 1)))->setParent(cI, cJ);
+				(mat + ((cI)*w + (cJ + 1)))->setType(cellType::considered);
+				cons.insert(make_pair(fN, make_pair(cI, cJ+1)));
+				
+				//mark considered rectangle
+				r.y = (cI) * stepSize;
+				r.x = (cJ + 1) * stepSize;
+				SDL_RenderFillRect(renderer, &r);
+			}
+		}
 
 		//4th neighbour (bottom right) i+1,j+1
-		//if (isValid(cI + 1, cJ + 1, w, h, mat)) {
-		//	//new f,g,h costs
-		//	double fN, hN, gN;
-		//	gN = (mat + (cI * w + cJ))->g + 1.414;
-		//	hN = hValue(cI + 1, cJ + 1, eI, eJ);
-		//	fN = hN + gN;
-		//	//check if cell is uninitialized or new path is more efficient than the old one
-		//	if ((mat + ((cI + 1) * w + (cJ + 1)))->f == FLT_MAX || (mat + ((cI + 1) * w + (cJ + 1)))->f > fN) {
-		//		//update the cells data
-		//		(mat + ((cI + 1) * w + (cJ + 1)))->setFGH(fN, gN, hN);
-		//		(mat + ((cI + 1) * w + (cJ + 1)))->setParent(cI, cJ);
-		//		(mat + ((cI + 1) * w + (cJ + 1)))->setType(cellType::considered);
-		//		cons.insert(make_pair(fN, make_pair(cI + 1, cJ + 1)));
-		//		
-		//		//mark considered rectangle
-		//		r.y = (cI + 1) * stepSize;
-		//		r.x = (cJ + 1) * stepSize;
-		//		SDL_RenderFillRect(renderer, &r);
-		//	}
-		//}
-
-		checkNeighbour(cons, cI, cJ, 1, 1, eI, eJ, w, h, mat, renderer, r, stepSize);
+		if (isValid(cI + 1, cJ + 1, w, h, mat)) {
+			//new f,g,h costs
+			double fN, hN, gN;
+			gN = (mat + (cI * w + cJ))->g + 1.414;
+			hN = hValue(cI + 1, cJ + 1, eI, eJ);
+			fN = hN + gN;
+			//check if cell is uninitialized or new path is more efficient than the old one
+			if ((mat + ((cI + 1) * w + (cJ + 1)))->f == FLT_MAX || (mat + ((cI + 1) * w + (cJ + 1)))->f > fN) {
+				//update the cells data
+				(mat + ((cI + 1) * w + (cJ + 1)))->setFGH(fN, gN, hN);
+				(mat + ((cI + 1) * w + (cJ + 1)))->setParent(cI, cJ);
+				(mat + ((cI + 1) * w + (cJ + 1)))->setType(cellType::considered);
+				cons.insert(make_pair(fN, make_pair(cI + 1, cJ + 1)));
+				
+				//mark considered rectangle
+				r.y = (cI + 1) * stepSize;
+				r.x = (cJ + 1) * stepSize;
+				SDL_RenderFillRect(renderer, &r);
+			}
+		}
 
 		//5th neighbour (bottom) i+1,j
-		//if (isValid(cI + 1, cJ, w, h, mat)) {
-		//	//new f,g,h costs
-		//	double fN, hN, gN;
-		//	gN = (mat + (cI * w + cJ))->g + 1.0;
-		//	hN = hValue(cI + 1, cJ, eI, eJ);
-		//	fN = hN + gN;
-		//	//check if cell is uninitialized or new path is more efficient than the old one
-		//	if ((mat + ((cI + 1) * w + (cJ)))->f == FLT_MAX || (mat + ((cI + 1) * w + (cJ)))->f > fN) {
-		//		//update the cells data
-		//		(mat + ((cI + 1) * w + (cJ)))->setFGH(fN, gN, hN);
-		//		(mat + ((cI + 1) * w + (cJ)))->setParent(cI, cJ);
-		//		(mat + ((cI + 1) * w + (cJ)))->setType(cellType::considered);
-		//		cons.insert(make_pair(fN, make_pair(cI + 1, cJ)));
-		//		
-		//		//mark considered rectangle
-		//		r.y = (cI + 1) * stepSize;
-		//		r.x = (cJ) * stepSize;
-		//		SDL_RenderFillRect(renderer, &r);
-		//	}
-		//}
-
-		checkNeighbour(cons, cI, cJ, 1, 0, eI, eJ, w, h, mat, renderer, r, stepSize);
+		if (isValid(cI + 1, cJ, w, h, mat)) {
+			//new f,g,h costs
+			double fN, hN, gN;
+			gN = (mat + (cI * w + cJ))->g + 1.0;
+			hN = hValue(cI + 1, cJ, eI, eJ);
+			fN = hN + gN;
+			//check if cell is uninitialized or new path is more efficient than the old one
+			if ((mat + ((cI + 1) * w + (cJ)))->f == FLT_MAX || (mat + ((cI + 1) * w + (cJ)))->f > fN) {
+				//update the cells data
+				(mat + ((cI + 1) * w + (cJ)))->setFGH(fN, gN, hN);
+				(mat + ((cI + 1) * w + (cJ)))->setParent(cI, cJ);
+				(mat + ((cI + 1) * w + (cJ)))->setType(cellType::considered);
+				cons.insert(make_pair(fN, make_pair(cI + 1, cJ)));
+				
+				//mark considered rectangle
+				r.y = (cI + 1) * stepSize;
+				r.x = (cJ) * stepSize;
+				SDL_RenderFillRect(renderer, &r);
+			}
+		}
 
 		//6th neighbour (bottom left) i+1,j-1
-		//if (isValid(cI + 1, cJ - 1, w, h, mat)) {
-		//	//new f,g,h costs
-		//	double fN, hN, gN;
-		//	gN = (mat + (cI * w + cJ))->g + 1.414;
-		//	hN = hValue(cI + 1, cJ - 1, eI, eJ);
-		//	fN = hN + gN;
-		//	//check if cell is uninitialized or new path is more efficient than the old one
-		//	if ((mat + ((cI + 1) * w + (cJ - 1)))->f == FLT_MAX || (mat + ((cI + 1) * w + (cJ - 1)))->f > fN) {
-		//		//update the cells data
-		//		(mat + ((cI + 1) * w + (cJ - 1)))->setFGH(fN, gN, hN);
-		//		(mat + ((cI + 1) * w + (cJ - 1)))->setParent(cI, cJ);
-		//		(mat + ((cI + 1) * w + (cJ - 1)))->setType(cellType::considered);
-		//		cons.insert(make_pair(fN, make_pair(cI + 1, cJ - 1)));
-		//		
-		//		//mark considered rectangle
-		//		r.y = (cI + 1) * stepSize;
-		//		r.x = (cJ - 1) * stepSize;
-		//		SDL_RenderFillRect(renderer, &r);
-		//	}
-		//}
-
-		checkNeighbour(cons, cI, cJ, 1, -1, eI, eJ, w, h, mat, renderer, r, stepSize);
+		if (isValid(cI + 1, cJ - 1, w, h, mat)) {
+			//new f,g,h costs
+			double fN, hN, gN;
+			gN = (mat + (cI * w + cJ))->g + 1.414;
+			hN = hValue(cI + 1, cJ - 1, eI, eJ);
+			fN = hN + gN;
+			//check if cell is uninitialized or new path is more efficient than the old one
+			if ((mat + ((cI + 1) * w + (cJ - 1)))->f == FLT_MAX || (mat + ((cI + 1) * w + (cJ - 1)))->f > fN) {
+				//update the cells data
+				(mat + ((cI + 1) * w + (cJ - 1)))->setFGH(fN, gN, hN);
+				(mat + ((cI + 1) * w + (cJ - 1)))->setParent(cI, cJ);
+				(mat + ((cI + 1) * w + (cJ - 1)))->setType(cellType::considered);
+				cons.insert(make_pair(fN, make_pair(cI + 1, cJ - 1)));
+				
+				//mark considered rectangle
+				r.y = (cI + 1) * stepSize;
+				r.x = (cJ - 1) * stepSize;
+				SDL_RenderFillRect(renderer, &r);
+			}
+		}
 
 		//7th neighbour (left) i,j-1
-		//if (isValid(cI, cJ - 1, w, h, mat)) {
-		//	//new f,g,h costs
-		//	double fN, hN, gN;
-		//	gN = (mat + (cI * w + cJ))->g + 1.0;
-		//	hN = hValue(cI, cJ - 1, eI, eJ);
-		//	fN = hN + gN;
-		//	//check if cell is uninitialized or new path is more efficient than the old one
-		//	if ((mat + ((cI)*w + (cJ - 1)))->f == FLT_MAX || (mat + ((cI)*w + (cJ - 1)))->f > fN) {
-		//		//update the cells data
-		//		(mat + ((cI)*w + (cJ - 1)))->setFGH(fN, gN, hN);
-		//		(mat + ((cI)*w + (cJ - 1)))->setParent(cI, cJ);
-		//		(mat + ((cI)*w + (cJ - 1)))->setType(cellType::considered);
-		//		cons.insert(make_pair(fN, make_pair(cI, cJ - 1)));
-		//		
-		//		//mark considered rectangle
-		//		r.y = (cI) * stepSize;
-		//		r.x = (cJ - 1) * stepSize;
-		//		SDL_RenderFillRect(renderer, &r);
-		//	}
-		//}
-
-		checkNeighbour(cons, cI, cJ,0, -1, eI, eJ, w, h, mat, renderer, r, stepSize);
+		if (isValid(cI, cJ - 1, w, h, mat)) {
+			//new f,g,h costs
+			double fN, hN, gN;
+			gN = (mat + (cI * w + cJ))->g + 1.0;
+			hN = hValue(cI, cJ - 1, eI, eJ);
+			fN = hN + gN;
+			//check if cell is uninitialized or new path is more efficient than the old one
+			if ((mat + ((cI)*w + (cJ - 1)))->f == FLT_MAX || (mat + ((cI)*w + (cJ - 1)))->f > fN) {
+				//update the cells data
+				(mat + ((cI)*w + (cJ - 1)))->setFGH(fN, gN, hN);
+				(mat + ((cI)*w + (cJ - 1)))->setParent(cI, cJ);
+				(mat + ((cI)*w + (cJ - 1)))->setType(cellType::considered);
+				cons.insert(make_pair(fN, make_pair(cI, cJ - 1)));
+				
+				//mark considered rectangle
+				r.y = (cI) * stepSize;
+				r.x = (cJ - 1) * stepSize;
+				SDL_RenderFillRect(renderer, &r);
+			}
+		}
 
 		//8th neighbour (top left) i-1,j-1
-		//if (isValid(cI - 1, cJ - 1, w, h, mat)) {
-		//	//new f,g,h costs
-		//	double fN, hN, gN;
-		//	gN = (mat + (cI * w + cJ))->g + 1.414;
-		//	hN = hValue(cI - 1, cJ - 1, eI, eJ);
-		//	fN = hN + gN;
-		//	//check if cell is uninitialized or new path is more efficient than the old one
-		//	if ((mat + ((cI - 1) * w + (cJ - 1)))->f == FLT_MAX || (mat + ((cI - 1) * w + (cJ - 1)))->f > fN) {
-		//		//update the cells data
-		//		(mat + ((cI - 1) * w + (cJ - 1)))->setFGH(fN, gN, hN);
-		//		(mat + ((cI - 1) * w + (cJ - 1)))->setParent(cI, cJ);
-		//		(mat + ((cI - 1) * w + (cJ - 1)))->setType(cellType::considered);
-		//		cons.insert(make_pair(fN, make_pair(cI - 1, cJ - 1)));
+		if (isValid(cI - 1, cJ - 1, w, h, mat)) {
+			//new f,g,h costs
+			double fN, hN, gN;
+			gN = (mat + (cI * w + cJ))->g + 1.414;
+			hN = hValue(cI - 1, cJ - 1, eI, eJ);
+			fN = hN + gN;
+			//check if cell is uninitialized or new path is more efficient than the old one
+			if ((mat + ((cI - 1) * w + (cJ - 1)))->f == FLT_MAX || (mat + ((cI - 1) * w + (cJ - 1)))->f > fN) {
+				//update the cells data
+				(mat + ((cI - 1) * w + (cJ - 1)))->setFGH(fN, gN, hN);
+				(mat + ((cI - 1) * w + (cJ - 1)))->setParent(cI, cJ);
+				(mat + ((cI - 1) * w + (cJ - 1)))->setType(cellType::considered);
+				cons.insert(make_pair(fN, make_pair(cI - 1, cJ - 1)));
 
-		//		//mark considered rectangle
-		//		r.y = (cI - 1) * stepSize;
-		//		r.x = (cJ - 1) * stepSize;
-		//		SDL_RenderFillRect(renderer, &r);
-		//	}
-		//}
-
-		checkNeighbour(cons, cI, cJ, -1, -1, eI, eJ, w, h, mat, renderer, r, stepSize);
-
+				//mark considered rectangle
+				r.y = (cI - 1) * stepSize;
+				r.x = (cJ - 1) * stepSize;
+				SDL_RenderFillRect(renderer, &r);
+			}
+		}
+#endif
 
 		SDL_RenderPresent(renderer);
 
