@@ -6,5 +6,5 @@ AStarVis.sln
 AStarVis.vcxproj
 Maps
 Libraries
-Debug
-.vs
+Debug/
+.vs/
